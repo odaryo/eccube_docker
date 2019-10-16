@@ -1,50 +1,111 @@
-# EC-CUBE 4.0
+# EC-CUBEの開発環境構築
 
-+ 本ドキュメントはEC-CUBEの開発者を主要な対象者としております。  
-+ パッケージ版は正式リリース後に[EC-CUBEオフィシャルサイト](http://www.ec-cube.net)で配布します。  
-+ カスタマイズやEC-CUBEの利用、仕様に関しては[開発コミュニティ](http://xoops.ec-cube.net)をご利用ください。  
-+ 本体開発にあたって不明点などあれば[Issue](https://github.com/EC-CUBE/ec-cube/wiki/Issues%E3%81%AE%E5%88%A9%E7%94%A8%E6%96%B9%E6%B3%95)をご利用下さい。
+## 想定環境
+
+* EC-CUBE 4.0.3
+* Apache 2.4.x
+* PHP 7.3
+* MySQL 8.0
 
 ## インストール
 
-### EC-CUBE 4.0のインストール方法
+Dockerを利用してインストールを行う  
+本家ドキュメントのインストール手順を参考
 
-開発ドキュメントの [インストール方法](http://doc4.ec-cube.net/quickstart_install) の手順に従ってインストールしてください。
+### 事前準備
 
-### CSS の編集・ビルド方法
+* docker for windowsのインストール
+    * 割愛
+* node.jsのインストール
+    * scssのコンパイルに使用する
+    * ターミナルから```$ node -v```と打ってエラーとなればインストールされていない。
+    * [こちら](https://nodejs.org/ja/)からダウンロード&インストール
+        * LTS版をインストール
 
-[Sass](http://sass-lang.com) を使用して記述されています。
-Sass のソースコードは `html/template/{admin,default}/assets/scss` にあります。
-前提として [https://nodejs.org/ja/] より、 Node.js をインストールしておいてください。
+### 手順
 
-以下のコマンドでビルドすることで、 `html/template/{admin,default}/assets/css` に CSS ファイルが出力されます。
+初回ビルド時は小一時間かかります。
 
-```shell
-npm install # 初回のみ
-npm run build # Sass のビルド
+1. ワークスペースへ移動
+1. Gitからダウンロード  
+```$ git clone https://github.com/odaryo/eccube_docker.git .```
+1. docker起動  
+
+```
+$ cd smart_order_catalog
+# .envファイルを作成
+$ cp .env.dist .env
+$ docker-compose up -d --build
+
+# EC-CUBEのビルド
+$ docker-compose exec app /bin/bash
+$ composer install --no-scripts --no-autoloader --no-dev
+$ composer dumpautoload -o --apcu --no-dev
+$ composer run-script installer-scripts && composer run-script auto-scripts 
+$ bin/console eccube:install
+  # 設定はDatabase Url以外はそのままでEnterキーを押していけばOK
+    下記の表示が出たら、DB情報を入力してEnter
+  Database Url [sqlite:///var/eccube.db]:
+   > mysql://root:root@db:3306/eccube_db
+   
+$ exit
 ```
 
-### 動作確認環境
+- ```... exceeded the timeout of 60 seconds.``` のようなエラーが出た場合は、タイムアウト時間の増加処理が必要です。  
+下記ファイルの172行目あたりを修正してください。  
+```/src/Eccube/Command/InstallerCommand.php```
 
-* Apache/2.4.x (mod_rewrite / mod_ssl 必須)
-* PHP7.1.20
-* PostgreSQL 9.2.1   
-* ブラウザー：Google Chrome  
+```
+- $process = new Process('bin/console ' . $command);
++ $process = new Process('bin/console ' . $command, null, null, null,6000);
+```
 
-詳しくは開発ドキュメントの [システム要件](http://doc4.ec-cube.net/quickstart_requirement) をご確認ください。
+- アクセスURLは```http://localhost:8080```
+- 管理画面は```http://localhost:8080/admin```
+
+### 2回目以降の起動手順
+
+2回目以降は下記コマンドで起動します。
+
+```
+$ docker-compose up -d
+```
+
+### scssコンパイルの方法
+
+windows側から行います  
+※node.jsをインストールしておいてください
+
+- 初回のみ  
+ warningが出るのは無視
+
+```
+$ npm install
+```
+
+- コンパイル
+
+```
+$ npm run dev
+```
+
+## DBへのアクセス情報
+
+* host: localhost
+* port: 3307
+* user: root
+* password: root
+* database: eccube_db
+
+## cssのビルド
+
+```
+$ yarn dev
+```
+
 
 ## ドキュメント
 
-### [EC-CUBE 4.0 開発ドキュメント@doc4.ec-cube.net](http://doc4.ec-cube.net/)
+* [EC-CUBE 4.0 開発ドキュメント@doc4.ec-cube.net](http://doc4.ec-cube.net/)
 
 
-EC-CUBE 4.0 の仕様や手順、開発Tipsに関するドキュメントを掲載しています。  
-修正や追記、新規ドキュメントの作成をいただく場合、以下のレポジトリからPullRequestをお送りください。  
-[https://github.com/EC-CUBE/ec-cube.github.io](https://github.com/EC-CUBE/ec-cube.github.io)
-
-
-### コピーライトポリシーへの同意
-
-コードの提供・追加、修正・変更その他「EC-CUBE」への開発の御協力（Issue投稿、PullRequest投稿など、GitHub上での活動）を行っていただく場合には、
-[EC-CUBEのコピーライトポリシー](https://github.com/EC-CUBE/ec-cube/wiki/EC-CUBE%E3%81%AE%E3%82%B3%E3%83%94%E3%83%BC%E3%83%A9%E3%82%A4%E3%83%88%E3%83%9D%E3%83%AA%E3%82%B7%E3%83%BC)をご理解いただき、ご了承いただく必要がございます。
-Issueの投稿やPullRequestを送信する際は、EC-CUBEのコピーライトポリシーに同意したものとみなします。
