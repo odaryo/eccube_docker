@@ -169,7 +169,7 @@ class InstallerCommand extends Command
         foreach ($commands as $command) {
             try {
                 $this->io->text(sprintf('<info>Run %s</info>...', $command));
-                $process = new Process('bin/console '.$command);
+                $process = new Process('bin/console ' . $command, null, null, null,6000);
                 $process->mustRun();
                 $this->io->text($process->getOutput());
             } catch (ProcessFailedException $e) {
